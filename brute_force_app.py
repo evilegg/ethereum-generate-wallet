@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """Brute force well-known ETH addresses, WarGames-style.
 
 Warning: this is utterly futile.  I've only done this to get a feel
