@@ -24,6 +24,7 @@ keccak = sha3.keccak_256()
 @click.command()
 def main(skip_frames):
     target_addresses = trie.EthereumAddressTrie(targets.targets)
+    target_addresses = trie.EthereumAddressTrie(targets.targets())
 
     # count, address[:count]
     best_score = (0, '')
