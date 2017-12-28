@@ -66,15 +66,17 @@ def main(skip_frames):
                                  current[:1]))
                 best_score = current
                 best_guess = (priv, pub, address)
-
     except KeyboardInterrupt:
+        elapsed_time = time.clock() - start_time
         priv, pub, address = best_guess
         print('\n')
-        print('Best Guess')
-        print('------------')
-        print('Private key:', priv.to_string().hex() if priv else priv)
-        print('Public key: ', pub.hex() if pub else pub)
-        print('Address:     0x' + address if address else '???')
+        print('Total guesses:', total_tries)
+        print('Seconds      :', elapsed_time)
+        print('Guess / sec  :', float(total_tries) / elapsed_time)
+        print('Num targets  :', target_addresses.sizeof)
+        print('Private key  :', priv.to_string().hex() if priv else priv)
+        print('Public key   :', pub.hex() if pub else pub)
+        print('Address      : 0x' + address if address else '???')
 
 
 if '__main__' == __name__:

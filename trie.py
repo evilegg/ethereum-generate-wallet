@@ -22,13 +22,19 @@ class EthereumAddressTrie(object):
          c -> d -> e -> f
     """
     def __init__(self, list_of_addresses):
+        self._size = 0
         self._value = {}
         for target in list_of_addresses:
+            self._size += 1
             ptr = self._value
             for digit in target:
                 if digit not in ptr:
                     ptr[digit] = {}
                 ptr = ptr[digit]
+
+    @property
+    def sizeof(self):
+        return self._size
 
     def Find(self, address):
         """Traverse the trie, matching as far as we can.
