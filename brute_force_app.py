@@ -18,6 +18,8 @@ import trie
 
 keccak = sha3.keccak_256()
 
+ETH_ADDRESS_LENGTH = 40
+
 @click.option('--skip-frames',
               default=0,
               help='Skip this many guesses when printing intermediate results.')
@@ -38,14 +40,15 @@ def main(skip_frames, timeout_secs, target_cache):
     best_guess = ('', '', '')
 
     frame_counter = 1
-    total_tries = 0
+    num_tries = 0
     start_time = time.clock()
 
     try:
         while (timeout_secs < 0) or (time.clock() - start_time < timeout_secs):
-            if best_score[0] >= 40:
+            if best_score[0] >= ETH_ADDRESS_LENGTH:
                 break
-            total_tries +=1
+            num_tries += 1
+
             priv = SigningKey.generate(curve=SECP256k1)
             pub = priv.get_verifying_key().to_string()
 
@@ -53,13 +56,12 @@ def main(skip_frames, timeout_secs, target_cache):
             address = keccak.hexdigest()[24:]
 
             current = target_addresses.Find(address)
-            total_tries += 1
             frame_counter += 1
 
             if (skip_frames <= 0 or frame_counter > skip_frames):
                 sys.stdout.write('\r%012.6f %08x %s %02d %-40s' % (
                                  time.clock() - start_time,
-                                 total_tries,
+                                 num_tries,
                                  priv.to_string().hex(),
                                  current[0],
                                  current[1]))
@@ -70,7 +72,7 @@ def main(skip_frames, timeout_secs, target_cache):
             if current >= best_score:
                 sys.stdout.write('\r%012.6f %08x %s %02d %-40s\n' % (
                                  time.clock() - start_time,
-                                 total_tries,
+                                 num_tries,
                                  priv.to_string().hex(),
                                  current[0],
                                  current[1]))
@@ -82,9 +84,9 @@ def main(skip_frames, timeout_secs, target_cache):
     elapsed_time = time.clock() - start_time
     priv, pub, address = best_guess
     print('\n')
-    print('Total guesses:', total_tries)
+    print('Total guesses:', num_tries)
     print('Seconds      :', elapsed_time)
-    print('Guess / sec  :', float(total_tries) / elapsed_time)
+    print('Guess / sec  :', float(num_tries) / elapsed_time)
     print('Num targets  :', target_addresses.sizeof)
     print('Private key  :', priv.to_string().hex() if priv else priv)
     print('Public key   :', pub.hex() if pub else pub)
