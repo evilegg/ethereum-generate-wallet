@@ -21,9 +21,11 @@ keccak = sha3.keccak_256()
 @click.option('--skip-frames',
               default=0,
               help='Skip this many guesses when printing intermediate results.')
+@click.option('--timeout-secs',
+              default=-1,
+              help='Stop trying after this many seconds, use -1 for forever.')
 @click.command()
-def main(skip_frames):
-    target_addresses = trie.EthereumAddressTrie(targets.targets)
+def main(skip_frames, timeout_secs):
     target_addresses = trie.EthereumAddressTrie(targets.targets())
 
     # count, address[:count]
@@ -37,8 +39,10 @@ def main(skip_frames):
     start_time = time.clock()
 
     try:
-        while best_score[0] < 40:
-            total_tries +=1 
+        while (timeout_secs < 0) or (time.clock() - start_time < timeout_secs):
+            if best_score[0] >= 40:
+                break
+            total_tries +=1
             priv = SigningKey.generate(curve=SECP256k1)
             pub = priv.get_verifying_key().to_string()
 
@@ -67,16 +71,18 @@ def main(skip_frames):
                 best_score = current
                 best_guess = (priv, pub, address)
     except KeyboardInterrupt:
-        elapsed_time = time.clock() - start_time
-        priv, pub, address = best_guess
-        print('\n')
-        print('Total guesses:', total_tries)
-        print('Seconds      :', elapsed_time)
-        print('Guess / sec  :', float(total_tries) / elapsed_time)
-        print('Num targets  :', target_addresses.sizeof)
-        print('Private key  :', priv.to_string().hex() if priv else priv)
-        print('Public key   :', pub.hex() if pub else pub)
-        print('Address      : 0x' + address if address else '???')
+        pass
+
+    elapsed_time = time.clock() - start_time
+    priv, pub, address = best_guess
+    print('\n')
+    print('Total guesses:', total_tries)
+    print('Seconds      :', elapsed_time)
+    print('Guess / sec  :', float(total_tries) / elapsed_time)
+    print('Num targets  :', target_addresses.sizeof)
+    print('Private key  :', priv.to_string().hex() if priv else priv)
+    print('Public key   :', pub.hex() if pub else pub)
+    print('Address      : 0x' + address if address else '???')
 
 
 if '__main__' == __name__:
