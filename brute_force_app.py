@@ -19,9 +19,8 @@ import trie
 keccak = sha3.keccak_256()
 
 @click.option('--skip-frames',
-              default=10,
-              help='Skip this many guesses when printing intermediate'
-                   ' results')
+              default=0,
+              help='Skip this many guesses when printing intermediate results.')
 @click.command()
 def main(skip_frames):
     target_addresses = trie.EthereumAddressTrie(targets.targets)
