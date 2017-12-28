@@ -54,7 +54,7 @@ def main(skip_frames):
                                  time.clock() - start_time,
                                  total_tries,
                                  priv.to_string().hex(),
-                                 current[:1]))
+                                 current))
                 frame_counter = 1
 
             if current >= best_score:
@@ -63,7 +63,7 @@ def main(skip_frames):
                                  time.clock() - start_time,
                                  total_tries,
                                  priv.to_string().hex(),
-                                 current[:1]))
+                                 current))
                 best_score = current
                 best_guess = (priv, pub, address)
     except KeyboardInterrupt:
