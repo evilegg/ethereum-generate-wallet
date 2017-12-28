@@ -1,19 +1,81 @@
 #!/usr/bin/python3
+"""Brute force well-known ETH addresses, WarGames-style.
 
-# pip install ecdsa
-# pip install pysha3
+Warning: this is utterly futile.  I've only done this to get a feel
+for how secure private keys are against brute-force attacks.
+"""
 
+import sys
+import time
+
+import click
 from ecdsa import SigningKey, SECP256k1
 import sha3
+import yaml
+
+import targets
+import trie
 
 keccak = sha3.keccak_256()
 
-priv = SigningKey.generate(curve=SECP256k1)
-pub = priv.get_verifying_key().to_string()
+@click.option('--skip-frames',
+              default=10,
+              help='Skip this many guesses when printing intermediate'
+                   ' results')
+@click.command()
+def main(skip_frames):
+    target_addresses = trie.EthereumAddressTrie(targets.targets)
 
-keccak.update(pub)
-address = keccak.hexdigest()[24:]
+    # count, address[:count]
+    best_score = (0, '')
 
-print("Private key:", priv.to_string().hex())
-print("Public key: ", pub.hex())
-print("Address:     0x" + address)
+    # private key, public key, address
+    best_guess = ('', '', '')
+
+    frame_counter = 1
+    total_tries = 0
+    start_time = time.clock()
+
+    try:
+        while best_score[0] < 40:
+            total_tries +=1 
+            priv = SigningKey.generate(curve=SECP256k1)
+            pub = priv.get_verifying_key().to_string()
+
+            keccak.update(pub)
+            address = keccak.hexdigest()[24:]
+
+            current = target_addresses.Find(address)
+            total_tries += 1
+            frame_counter += 1
+
+            if (skip_frames <= 0 or frame_counter > skip_frames):
+                sys.stdout.write('\r%012.6f %08x %s %s' % (
+                                 time.clock() - start_time,
+                                 total_tries,
+                                 priv.to_string().hex(),
+                                 current[:1]))
+                frame_counter = 1
+
+            if current >= best_score:
+                # always print the best guess
+                sys.stdout.write('\r%012.6f %08x %s %s\n' % (
+                                 time.clock() - start_time,
+                                 total_tries,
+                                 priv.to_string().hex(),
+                                 current[:1]))
+                best_score = current
+                best_guess = (priv, pub, address)
+
+    except KeyboardInterrupt:
+        priv, pub, address = best_guess
+        print('\n')
+        print('Best Guess')
+        print('------------')
+        print('Private key:', priv.to_string().hex() if priv else priv)
+        print('Public key: ', pub.hex() if pub else pub)
+        print('Address:     0x' + address if address else '???')
+
+
+if '__main__' == __name__:
+    main()
