@@ -57,20 +57,23 @@ def main(skip_frames, timeout_secs, target_cache):
             frame_counter += 1
 
             if (skip_frames <= 0 or frame_counter > skip_frames):
-                sys.stdout.write('\r%012.6f %08x %s %s' % (
+                sys.stdout.write('\r%012.6f %08x %s %02d %-40s' % (
                                  time.clock() - start_time,
                                  total_tries,
                                  priv.to_string().hex(),
-                                 current))
+                                 current[0],
+                                 current[1]))
                 frame_counter = 1
 
+            # the current guess was as close or closer to a valid ETH address
+            # show it and update our best guess counter
             if current >= best_score:
-                # always print the best guess
-                sys.stdout.write('\r%012.6f %08x %s %s\n' % (
+                sys.stdout.write('\r%012.6f %08x %s %02d %-40s\n' % (
                                  time.clock() - start_time,
                                  total_tries,
                                  priv.to_string().hex(),
-                                 current))
+                                 current[0],
+                                 current[1]))
                 best_score = current
                 best_guess = (priv, pub, address)
     except KeyboardInterrupt:
