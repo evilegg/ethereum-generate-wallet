@@ -24,9 +24,12 @@ keccak = sha3.keccak_256()
 @click.option('--timeout-secs',
               default=-1,
               help='Stop trying after this many seconds, use -1 for forever.')
+@click.option('--target-cache',
+              type=click.File('r'),
+              help='Local yaml file containing target addresses')
 @click.command()
-def main(skip_frames, timeout_secs):
-    target_addresses = trie.EthereumAddressTrie(targets.targets())
+def main(skip_frames, timeout_secs, target_cache):
+    target_addresses = trie.EthereumAddressTrie(targets.targets(target_cache))
 
     # count, address[:count]
     best_score = (0, '')

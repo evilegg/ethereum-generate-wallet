@@ -1,6 +1,16 @@
 """Cache of target ETH address we are trying to crack."""
 
-def targets():
+import yaml
+
+
+def targets(local_cache=None):
+    if local_cache:
+        return yaml.safe_load(local_cache)
+    else:
+        return top_100_targets()
+
+
+def top_100_targets():
     """Top 100 ETH addresses."""
     return [
         '0000000000000000000000000000000000000000',
