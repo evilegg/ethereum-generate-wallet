@@ -18,8 +18,10 @@ import trie
 
 keccak = sha3.keccak_256()
 
+
 ETH_ADDRESS_LENGTH = 40
 OUTPUT_FORMAT = '\r%012.6f %08x %s %02d %-40s'
+
 
 @click.option('--fps',
               default=60,
@@ -52,7 +54,7 @@ def main(fps, timeout_secs, target_cache):
     try:
         while best_score[0] < ETH_ADDRESS_LENGTH:
             now = time.clock()
-            if start_time + timeout_secs > now:
+            if start_time + timeout_secs < now:
                 break
 
             num_tries += 1
