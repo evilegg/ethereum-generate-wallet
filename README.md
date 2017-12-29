@@ -66,7 +66,7 @@ $ ./brute_force_app.py --timeout-secs 5
 Total guesses: 76
 Seconds      : 5.025855
 Guess / sec  : 15.121805145592143
-Num targets  : 101
+Num targets  : 100
 Private key  : e140f05248eea21646d78d652b8a4f27870c88e66d3ec7ee02c4b39cf496bda6
 Public key   : 5c2500440c29a30a49600a40767216757c1fedd50887c13489500a4dc0d8abf1d3c4d9839739ef0a369ebd2aeb2fbbfe2a3c24d7ae9a43f064fab1045e7e02c2
 Address      : 0x0c808880e40333d3b4e358cc43d107dfd6196b5d
