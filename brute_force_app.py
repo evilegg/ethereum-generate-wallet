@@ -18,11 +18,15 @@ import trie
 
 keccak = sha3.keccak_256()
 
-ETH_ADDRESS_LENGTH = 40
 
-@click.option('--skip-frames',
-              default=0,
-              help='Skip this many guesses when printing intermediate results.')
+ETH_ADDRESS_LENGTH = 40
+OUTPUT_FORMAT = '\r%012.6f %08x %s %02d %-40s'
+
+
+@click.option('--fps',
+              default=60,
+              help='Use this many frames per second when showing guesses.  '
+                   'Use non-positive number to go as fast as possible.')
 @click.option('--timeout-secs',
               default=-1,
               help='Stop trying after this many seconds, use -1 for forever.')
@@ -30,7 +34,7 @@ ETH_ADDRESS_LENGTH = 40
               type=click.File('r'),
               help='Local yaml file containing target addresses')
 @click.command()
-def main(skip_frames, timeout_secs, target_cache):
+def main(fps, timeout_secs, target_cache):
     target_addresses = trie.EthereumAddressTrie(targets.targets(target_cache))
 
     # count, address[:count]
@@ -39,14 +43,20 @@ def main(skip_frames, timeout_secs, target_cache):
     # private key, public key, address
     best_guess = ('', '', '')
 
-    frame_counter = 1
     num_tries = 0
+
+    # calculate the fps
+    fps = 1.0 / float(fps) if fps > 0 else fps
+    last_frame = 0
+
     start_time = time.clock()
 
     try:
-        while (timeout_secs < 0) or (time.clock() - start_time < timeout_secs):
-            if best_score[0] >= ETH_ADDRESS_LENGTH:
+        while best_score[0] < ETH_ADDRESS_LENGTH:
+            now = time.clock()
+            if start_time + timeout_secs < now:
                 break
+
             num_tries += 1
 
             priv = SigningKey.generate(curve=SECP256k1)
@@ -56,22 +66,21 @@ def main(skip_frames, timeout_secs, target_cache):
             address = keccak.hexdigest()[24:]
 
             current = target_addresses.Find(address)
-            frame_counter += 1
 
-            if (skip_frames <= 0 or frame_counter > skip_frames):
-                sys.stdout.write('\r%012.6f %08x %s %02d %-40s' % (
-                                 time.clock() - start_time,
+            if now >= last_frame + fps:
+                sys.stdout.write(OUTPUT_FORMAT % (
+                                 now - start_time,
                                  num_tries,
                                  priv.to_string().hex(),
                                  current[0],
                                  current[1]))
-                frame_counter = 1
+                last_frame = now
 
             # the current guess was as close or closer to a valid ETH address
             # show it and update our best guess counter
             if current >= best_score:
-                sys.stdout.write('\r%012.6f %08x %s %02d %-40s\n' % (
-                                 time.clock() - start_time,
+                sys.stdout.write((OUTPUT_FORMAT + '\n') % (
+                                 now - start_time,
                                  num_tries,
                                  priv.to_string().hex(),
                                  current[0],
