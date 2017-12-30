@@ -3,6 +3,7 @@ Simple implementation of a trie-like data structure to store target
 ETH addresses.
 """
 
+
 class EthereumAddressTrie(object):
     """Convert a list of target addresses into a trie.
 
@@ -21,9 +22,12 @@ class EthereumAddressTrie(object):
                     \-> f
          c -> d -> e -> f
     """
-    def __init__(self, list_of_addresses):
+    def __init__(self, list_of_addresses=None):
         self._size = 0
         self._value = {}
+        self.Extend(list_of_addresses or [])
+
+    def Extend(self, list_of_addresses):
         for target in list_of_addresses:
             self._size += 1
             ptr = self._value
@@ -31,9 +35,9 @@ class EthereumAddressTrie(object):
                 if digit not in ptr:
                     ptr[digit] = {}
                 ptr = ptr[digit]
+        return self._value
 
-    @property
-    def sizeof(self):
+    def length(self):
         return self._size
 
     def Find(self, address):

@@ -5,6 +5,7 @@ Warning: this is utterly futile.  I've only done this to get a feel
 for how secure private keys are against brute-force attacks.
 """
 
+import os
 import sys
 import time
 
@@ -19,23 +20,35 @@ import trie
 keccak = sha3.keccak_256()
 
 
+try:
+    DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+except:
+    DATA_DIR = os.path.join(os.getcwd(), 'data')
 ETH_ADDRESS_LENGTH = 40
-OUTPUT_FORMAT = '\r%012.6f %08x %s %02d %-40s'
+OUTPUT_FORMAT = '\r%012.6f %08x %s % 3d  %-40s'
+HEADER_STR = '%-12s %-8s %-64s %-3s %-3s' % ('duration',
+                                             'attempts',
+                                             'private-key',
+                                             'str',
+                                             'address')
 
 
 @click.option('--fps',
               default=60,
               help='Use this many frames per second when showing guesses.  '
                    'Use non-positive number to go as fast as possible.')
-@click.option('--timeout-secs',
+@click.option('--timeout',
               default=-1,
-              help='Stop trying after this many seconds, use -1 for forever.')
-@click.option('--target-cache',
+              help='If set to a positive integer, stop trying after this many '
+                   'seconds.')
+@click.option('--addresses',
               type=click.File('r'),
-              help='Local yaml file containing target addresses')
+              default=os.path.join(DATA_DIR, 'addresses.yaml'),
+              help='Filename for yaml file containing target addresses.')
 @click.command()
-def main(fps, timeout_secs, target_cache):
-    target_addresses = trie.EthereumAddressTrie(targets.targets(target_cache))
+def main(fps, timeout, addresses):
+    target_addresses = trie.EthereumAddressTrie(targets.targets(addresses))
+    print('Loaded %d addresses' % (target_addresses.length()))
 
     # count, address[:count]
     best_score = (0, '')
@@ -51,10 +64,11 @@ def main(fps, timeout_secs, target_cache):
 
     start_time = time.clock()
 
+    print(HEADER_STR)
     try:
         while best_score[0] < ETH_ADDRESS_LENGTH:
             now = time.clock()
-            if start_time + timeout_secs < now:
+            if (timeout > 0) and (start_time + timeout < now):
                 break
 
             num_tries += 1
@@ -67,7 +81,7 @@ def main(fps, timeout_secs, target_cache):
 
             current = target_addresses.Find(address)
 
-            if now >= last_frame + fps:
+            if last_frame + fps < now:
                 sys.stdout.write(OUTPUT_FORMAT % (
                                  now - start_time,
                                  num_tries,
@@ -96,7 +110,7 @@ def main(fps, timeout_secs, target_cache):
     print('Total guesses:', num_tries)
     print('Seconds      :', elapsed_time)
     print('Guess / sec  :', float(num_tries) / elapsed_time)
-    print('Num targets  :', target_addresses.sizeof)
+    print('Num targets  :', target_addresses.length())
     print('Private key  :', priv.to_string().hex() if priv else priv)
     print('Public key   :', pub.hex() if pub else pub)
     print('Address      : 0x' + address if address else '???')
