@@ -96,7 +96,7 @@ def main(fps, timeout_secs, target_cache):
     print('Total guesses:', num_tries)
     print('Seconds      :', elapsed_time)
     print('Guess / sec  :', float(num_tries) / elapsed_time)
-    print('Num targets  :', target_addresses.sizeof)
+    print('Num targets  :', target_addresses.length())
     print('Private key  :', priv.to_string().hex() if priv else priv)
     print('Public key   :', pub.hex() if pub else pub)
     print('Address      : 0x' + address if address else '???')
