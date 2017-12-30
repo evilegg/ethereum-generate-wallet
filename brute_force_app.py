@@ -20,6 +20,10 @@ import trie
 keccak = sha3.keccak_256()
 
 
+try:
+    DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+except:
+    DATA_DIR = os.path.join(os.getcwd(), 'data')
 ETH_ADDRESS_LENGTH = 40
 OUTPUT_FORMAT = '\r%012.6f %08x %s % 3d  %-40s'
 HEADER_STR = '%-12s %-8s %-64s %-3s %-3s' % ('duration',
@@ -39,7 +43,7 @@ HEADER_STR = '%-12s %-8s %-64s %-3s %-3s' % ('duration',
                    'seconds.')
 @click.option('--addresses',
               type=click.File('r'),
-              default=os.path.join(os.path.dirname(__file__), 'data', 'addresses.yaml'),
+              default=os.path.join(DATA_DIR, 'addresses.yaml'),
               help='Filename for yaml file containing target addresses.')
 @click.command()
 def main(fps, timeout, addresses):
