@@ -22,9 +22,12 @@ class EthereumAddressTrie(object):
                     \-> f
          c -> d -> e -> f
     """
-    def __init__(self, list_of_addresses):
+    def __init__(self, list_of_addresses=None):
         self._size = 0
         self._value = {}
+        self.Extend(list_of_addresses or [])
+
+    def Extend(self, list_of_addresses):
         for target in list_of_addresses:
             self._size += 1
             ptr = self._value
