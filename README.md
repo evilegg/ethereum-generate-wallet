@@ -74,9 +74,11 @@ Address      : 0x0c808880e40333d3b4e358cc43d107dfd6196b5d
 $ deactivate
 ```
 
-You can skip the virtualenv and install the necessary dependencies to
-your system's python3 distribution:
+Not recommended: you can skip the `virtualenv` steps and install the
+necessary dependencies to your system's python3 distribution:
 
 ```bash
-pip install -r requirements.txt
+$ pip install -r requirements.txt
+$ python3 ./brute_force_app.py
+...
 ```
