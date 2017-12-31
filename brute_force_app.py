@@ -7,6 +7,7 @@ for how secure private keys are against brute-force attacks.
 
 import os
 import sys
+import threading
 import time
 
 import click
@@ -14,6 +15,7 @@ from ecdsa import SigningKey, SECP256k1
 import sha3
 import yaml
 
+import monitoring
 import targets
 import trie
 
@@ -45,13 +47,20 @@ HEADER_STR = '%-12s %-8s %-64s %-3s %-3s' % ('duration',
               type=click.File('r'),
               default=os.path.join(DATA_DIR, 'addresses.yaml'),
               help='Filename for yaml file containing target addresses.')
+@click.option('--port',
+              default=8120,
+              help='Monitoring port')
 @click.command()
-def main(fps, timeout, addresses):
+def main(fps, timeout, addresses, port):
     target_addresses = trie.EthereumAddressTrie(targets.targets(addresses))
     print('Loaded %d addresses\n' % (target_addresses.length()))
 
+    httpd = monitoring.Start('', port)
+    print('Starting web-server on port:', port)
+
     # count, address[:count]
     best_score = (0, '')
+    bs = monitoring.MonitoredVariable('best_score', best_score)
 
     # private key, public key, address
     best_guess = ('', '', '')
@@ -100,9 +109,13 @@ def main(fps, timeout, addresses):
                                  current[0],
                                  current[1]))
                 best_score = current
+                bs.update(current)
                 best_guess = (priv, pub, address)
     except KeyboardInterrupt:
         pass
+
+    print('Shutting down server')
+    monitoring.Stop(httpd)
 
     elapsed_time = time.clock() - start_time
     priv, pub, address = best_guess
@@ -115,7 +128,7 @@ def main(fps, timeout, addresses):
     print('Best Guess')
     print('Private key  :', priv.to_string().hex() if priv else priv)
     print('Public key   :', pub.hex() if pub else pub)
-    print('Address      : 0x' + address if address else '???')
+    print('Address      : 0x' + address if address else '?' * 40)
     print('Strength     : %d of 40 digits (%3.2f%%)' %
         (best_score[0], 100.0 * best_score[0] / 40.0))
 
