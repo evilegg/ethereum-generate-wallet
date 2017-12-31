@@ -1,7 +1,13 @@
 # Ethereum Private Key Brute Force Attacker
 
-A simple python script to generate public addresses and compare to known
-ETH addresses.
+A simple, pure-python script to generate private keys and compare the
+resulting ETH addresses with a list of known values.  Strength of each
+guess is measured by the number of leading hexadecimal digits that match
+(other digits may match, but we don't count those).
+
+While guessing, the script shows it's guesses WarGames-style:
+[![animation](resources/animation.gif)](resources/animation.gif)
+
 ## Usage
 
 ```
