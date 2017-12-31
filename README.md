@@ -2,29 +2,29 @@
 
 A simple python script to generate public addresses and compare to known
 ETH addresses.
+## Usage
 
 ```
 Usage: brute_force_app.py [OPTIONS]
 
 Options:
-  --target-cache FILENAME  Local yaml file containing target addresses
-  --timeout-secs INTEGER   Stop trying after this many seconds, use -1 for
-                           forever.
-  --fps INTEGER            Use this many frames per second when showing
-                           guesses.  Use non-positive number to go as fast as
-                           possible.
-  --help                   Show this message and exit.
+  --addresses FILENAME  Filename for yaml file containing target addresses.
+  --timeout INTEGER     If set to a positive integer, stop trying after this
+                        many seconds.
+  --fps INTEGER         Use this many frames per second when showing guesses.
+                        Use non-positive number to go as fast as possible.
+  --help                Show this message and exit.
 ```
 
 Thanks to
 [@vkobel/ethereum-generate-wallet](https://github.com/vkobel/ethereum-generate-wallet)
-for the pure python implementation of ETH key generation.
+for the pure-python implementation of ETH key generation.
 
 ## Why?
 
 I wanted a more tangible understanding of how hard it is to guess a
-private key before using it to store any non-trivial value.  I mean, how
-hard could it be to guess someone else's key?  As this script tries to
+private key before using it to store any non-trivial value.  I mean, *how
+hard could it be to guess someone else's key, right*?  As this script tries to
 show, it's basically impossible to collide with an already existing key.
 
 How many leading digits can you match?  ;)
