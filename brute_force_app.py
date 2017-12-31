@@ -48,7 +48,7 @@ HEADER_STR = '%-12s %-8s %-64s %-3s %-3s' % ('duration',
 @click.command()
 def main(fps, timeout, addresses):
     target_addresses = trie.EthereumAddressTrie(targets.targets(addresses))
-    print('Loaded %d addresses' % (target_addresses.length()))
+    print('Loaded %d addresses\n' % (target_addresses.length()))
 
     # count, address[:count]
     best_score = (0, '')
@@ -111,9 +111,13 @@ def main(fps, timeout, addresses):
     print('Seconds      :', elapsed_time)
     print('Guess / sec  :', float(num_tries) / elapsed_time)
     print('Num targets  :', target_addresses.length())
+    print('')
+    print('Best Guess')
     print('Private key  :', priv.to_string().hex() if priv else priv)
     print('Public key   :', pub.hex() if pub else pub)
     print('Address      : 0x' + address if address else '???')
+    print('Strength     : %d of 40 digits (%3.2f%%)' %
+        (best_score[0], 100.0 * best_score[0] / 40.0))
 
 
 if '__main__' == __name__:
