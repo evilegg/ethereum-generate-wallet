@@ -23,9 +23,10 @@ for the pure-python implementation of ETH key generation.
 ## Why?
 
 I wanted a more tangible understanding of how hard it is to guess a
-private key before using it to store any non-trivial value.  I mean, *how
-hard could it be to guess someone else's key, right*?  As this script tries to
-show, it's basically impossible to collide with an already existing key.
+private key before using it to store any non-trivial value.  I mean,
+_how hard could it be to guess someone else's key, **right**_?  As this
+script tries to show, it's basically impossible to collide with an
+already existing key.
 
 How many leading digits can you match?  ;)
 
