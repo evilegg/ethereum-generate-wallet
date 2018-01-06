@@ -76,8 +76,9 @@ def main(fps, timeout, addresses, port):
 
 
     # tuple of private key, public key, address
-    best_guess = ('', '', '?' * 40)
-    varz.best_guess = dict(zip(('private-key', 'public-key', 'address'), best_guess))
+    varz.best_guess = ('', '', '?' * 40)
+    varz.best_guess_human = monitoring.ComputedStat(
+        lambda m: dict(zip(('private-key', 'public-key', 'address'), m.best_guess)))
 
     # calculate the fps
     fps = 1.0 / float(fps) if fps > 0 else fps
@@ -123,15 +124,14 @@ def main(fps, timeout, addresses, port):
                                  current[0],
                                  current[1]))
                 varz.best_score = current
-                best_guess = (priv.to_string().hex(), pub.hex(), address)
-                varz.best_guess = dict(zip(('private-key', 'public-key', 'address'), best_guess))
+                varz.best_guess = (priv.to_string().hex(), pub.hex(), address)
     except KeyboardInterrupt:
         pass
 
     monitoring.Stop(httpd)
 
     varz.elapsed_time = time.clock() - start_time
-    private_key, public_key, eth_address = best_guess
+    private_key, public_key, eth_address = varz.best_guess
     print('\n')
     print('Total guesses:', varz.num_tries)
     print('Seconds      :', varz.elapsed_time)
