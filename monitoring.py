@@ -43,3 +43,14 @@ def Stop(server):
 
 def Stats():
     return _GLOBAL_STATS
+
+
+class ComputedStat(object):
+    """A stat that is computed from the _GLOBAL_STATS as a namespace."""
+    def __init__(self, func, units=''):
+        self._func = func
+        self._units = units
+
+    def __str__(self):
+        val = self._func(Stats())
+        return ' '.join(map(str, (val, self._units)))

@@ -57,22 +57,34 @@ def main(fps, timeout, addresses, port):
 
     httpd = monitoring.Start('', port)
     varz = monitoring.Stats()
+
     varz.fps = fps
     varz.timeout = timeout if timeout > 0 else 'forever'
 
-    # count, address[:count]
+    # score is tuple of number of matching leading hex digits and that
+    # portion of the resulting public key: (count, address[:count])
     varz.best_score = (0, '')
+    varz.difficulty = monitoring.ComputedStat(
+        lambda m: '%d of 40 digits (%3.2f%%)' % (m.best_score[0],
+                                                 100.0 * m.best_score[0] / 40.0)
+    )
 
-    # private key, public key, address
-    varz.best_guess = ('', '', '?' * 40)
-
+    # count the number of private keys generated
     varz.num_tries = 0
+    varz.guess_rate = monitoring.ComputedStat(
+        lambda m: float(m.num_tries) / m.elapsed_time, units='guesses/sec')
+
+
+    # tuple of private key, public key, address
+    best_guess = ('', '', '?' * 40)
+    varz.best_guess = dict(zip(('private-key', 'public-key', 'address'), best_guess))
 
     # calculate the fps
     fps = 1.0 / float(fps) if fps > 0 else fps
     last_frame = 0
 
     start_time = time.clock()
+    varz.start_time = time.asctime(time.localtime(start_time))
 
     print(HEADER_STR)
     try:
@@ -83,7 +95,6 @@ def main(fps, timeout, addresses, port):
                 break
 
             varz.num_tries += 1
-            varz.guess_rate = float(varz.num_tries) / varz.elapsed_time
 
             priv = SigningKey.generate(curve=SECP256k1)
             pub = priv.get_verifying_key().to_string()
@@ -112,14 +123,15 @@ def main(fps, timeout, addresses, port):
                                  current[0],
                                  current[1]))
                 varz.best_score = current
-                varz.best_guess = (priv.to_string().hex(), pub.hex(), address)
+                best_guess = (priv.to_string().hex(), pub.hex(), address)
+                varz.best_guess = dict(zip(('private-key', 'public-key', 'address'), best_guess))
     except KeyboardInterrupt:
         pass
 
     monitoring.Stop(httpd)
 
     varz.elapsed_time = time.clock() - start_time
-    private_key, public_key, eth_address = varz.best_guess
+    private_key, public_key, eth_address = best_guess
     print('\n')
     print('Total guesses:', varz.num_tries)
     print('Seconds      :', varz.elapsed_time)
