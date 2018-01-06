@@ -5,9 +5,14 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingTCPServer
 import threading
 
+import attrdict
+
+
+_GLOBAL_STATS = attrdict.AttrDict()
+
 
 class MonitoringPortServer(HTTPServer, ThreadingTCPServer):
-    """A multithreaded http server."""
+    """A multithreaded http server for exporting monitoring information."""
 
 
 class MonitoringPortHandler(BaseHTTPRequestHandler):
@@ -16,15 +21,17 @@ class MonitoringPortHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
-        message = 'Hello Monitoring Port\n'
-        for name, value in MonitoredVariable.REGISTRY.items():
-            message += '%s = %s\n' % (name, value.value)
-        
-        self.wfile.write(bytes(message, 'utf8'))
+        for name, value in _GLOBAL_STATS.items():
+            self.wfile.write(bytes('%s: %s\n' % (name, value), 'utf8'))
         return
+
+    def log_message(self, fmt, *args):
+        """Squelch monitoring for now"""
+        pass
 
 
 def Start(address, port):
+    print('web-server on:', (address, port))
     httpd = MonitoringPortServer((address, port), MonitoringPortHandler)
     threading.Thread(target=httpd.serve_forever).start()
     return httpd
@@ -34,15 +41,5 @@ def Stop(server):
     server.shutdown()
 
 
-class MonitoredVariable(object):
-    REGISTRY = {}
-    def __init__(self, name, initial_value=None):
-        self.name = name
-        self.value = initial_value
-        self.REGISTRY[name] = self
-
-    def update(self, value):
-        self.value = value
-
-    def incr(self, amount=1):
-        self.value += amount
+def Stats():
+    return _GLOBAL_STATS

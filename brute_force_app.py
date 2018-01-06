@@ -56,16 +56,17 @@ def main(fps, timeout, addresses, port):
     print('Loaded %d addresses\n' % (target_addresses.length()))
 
     httpd = monitoring.Start('', port)
-    print('Starting web-server on port:', port)
+    varz = monitoring.Stats()
+    varz.fps = fps
+    varz.timeout = timeout if timeout > 0 else 'forever'
 
     # count, address[:count]
-    best_score = (0, '')
-    bs = monitoring.MonitoredVariable('best_score', best_score)
+    varz.best_score = (0, '')
 
     # private key, public key, address
-    best_guess = ('', '', '')
+    varz.best_guess = ('', '', '?' * 40)
 
-    num_tries = 0
+    varz.num_tries = 0
 
     # calculate the fps
     fps = 1.0 / float(fps) if fps > 0 else fps
@@ -75,12 +76,14 @@ def main(fps, timeout, addresses, port):
 
     print(HEADER_STR)
     try:
-        while best_score[0] < ETH_ADDRESS_LENGTH:
+        while varz.best_score[0] < ETH_ADDRESS_LENGTH:
             now = time.clock()
+            varz.elapsed_time = now - start_time
             if (timeout > 0) and (start_time + timeout < now):
                 break
 
-            num_tries += 1
+            varz.num_tries += 1
+            varz.guess_rate = float(varz.num_tries) / varz.elapsed_time
 
             priv = SigningKey.generate(curve=SECP256k1)
             pub = priv.get_verifying_key().to_string()
@@ -93,7 +96,7 @@ def main(fps, timeout, addresses, port):
             if last_frame + fps < now:
                 sys.stdout.write(OUTPUT_FORMAT % (
                                  now - start_time,
-                                 num_tries,
+                                 varz.num_tries,
                                  priv.to_string().hex(),
                                  current[0],
                                  current[1]))
@@ -101,36 +104,34 @@ def main(fps, timeout, addresses, port):
 
             # the current guess was as close or closer to a valid ETH address
             # show it and update our best guess counter
-            if current >= best_score:
+            if current >= varz.best_score:
                 sys.stdout.write((OUTPUT_FORMAT + '\n') % (
                                  now - start_time,
-                                 num_tries,
+                                 varz.num_tries,
                                  priv.to_string().hex(),
                                  current[0],
                                  current[1]))
-                best_score = current
-                bs.update(current)
-                best_guess = (priv, pub, address)
+                varz.best_score = current
+                varz.best_guess = (priv.to_string().hex(), pub.hex(), address)
     except KeyboardInterrupt:
         pass
 
-    print('Shutting down server')
     monitoring.Stop(httpd)
 
-    elapsed_time = time.clock() - start_time
-    priv, pub, address = best_guess
+    varz.elapsed_time = time.clock() - start_time
+    private_key, public_key, eth_address = varz.best_guess
     print('\n')
-    print('Total guesses:', num_tries)
-    print('Seconds      :', elapsed_time)
-    print('Guess / sec  :', float(num_tries) / elapsed_time)
+    print('Total guesses:', varz.num_tries)
+    print('Seconds      :', varz.elapsed_time)
+    print('Guess / sec  :', float(varz.num_tries) / varz.elapsed_time)
     print('Num targets  :', target_addresses.length())
     print('')
     print('Best Guess')
-    print('Private key  :', priv.to_string().hex() if priv else priv)
-    print('Public key   :', pub.hex() if pub else pub)
-    print('Address      : 0x' + address if address else '?' * 40)
+    print('Private key  :', private_key)
+    print('Public key   :', public_key)
+    print('Address      :', eth_address)
     print('Strength     : %d of 40 digits (%3.2f%%)' %
-        (best_score[0], 100.0 * best_score[0] / 40.0))
+        (varz.best_score[0], 100.0 * varz.best_score[0] / 40.0))
 
 
 if '__main__' == __name__:
