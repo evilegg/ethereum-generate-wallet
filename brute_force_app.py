@@ -7,6 +7,7 @@ for how secure private keys are against brute-force attacks.
 
 import os
 import sys
+import threading
 import time
 
 import click
@@ -14,6 +15,7 @@ from ecdsa import SigningKey, SECP256k1
 import sha3
 import yaml
 
+import monitoring
 import targets
 import trie
 
@@ -45,33 +47,55 @@ HEADER_STR = '%-12s %-8s %-64s %-3s %-3s' % ('duration',
               type=click.File('r'),
               default=os.path.join(DATA_DIR, 'addresses.yaml'),
               help='Filename for yaml file containing target addresses.')
+@click.option('--port',
+              default=8120,
+              help='Monitoring port')
 @click.command()
-def main(fps, timeout, addresses):
+def main(fps, timeout, addresses, port):
     target_addresses = trie.EthereumAddressTrie(targets.targets(addresses))
     print('Loaded %d addresses\n' % (target_addresses.length()))
 
-    # count, address[:count]
-    best_score = (0, '')
+    httpd = monitoring.Start('', port)
+    varz = monitoring.Stats()
 
-    # private key, public key, address
-    best_guess = ('', '', '')
+    varz.fps = fps
+    varz.timeout = timeout if timeout > 0 else 'forever'
 
-    num_tries = 0
+    # score is tuple of number of matching leading hex digits and that
+    # portion of the resulting public key: (count, address[:count])
+    varz.best_score = (0, '')
+    varz.difficulty = monitoring.ComputedStat(
+        lambda m: '%d of 40 digits (%3.2f%%)' % (m.best_score[0],
+                                                 100.0 * m.best_score[0] / 40.0)
+    )
+
+    # count the number of private keys generated
+    varz.num_tries = 0
+    varz.guess_rate = monitoring.ComputedStat(
+        lambda m: float(m.num_tries) / m.elapsed_time, units='guesses/sec')
+
+
+    # tuple of private key, public key, address
+    varz.best_guess = ('', '', '?' * 40)
+    varz.best_guess_human = monitoring.ComputedStat(
+        lambda m: dict(zip(('private-key', 'public-key', 'address'), m.best_guess)))
 
     # calculate the fps
     fps = 1.0 / float(fps) if fps > 0 else fps
     last_frame = 0
 
     start_time = time.clock()
+    varz.start_time = time.asctime(time.localtime(start_time))
 
     print(HEADER_STR)
     try:
-        while best_score[0] < ETH_ADDRESS_LENGTH:
+        while varz.best_score[0] < ETH_ADDRESS_LENGTH:
             now = time.clock()
+            varz.elapsed_time = now - start_time
             if (timeout > 0) and (start_time + timeout < now):
                 break
 
-            num_tries += 1
+            varz.num_tries += 1
 
             priv = SigningKey.generate(curve=SECP256k1)
             pub = priv.get_verifying_key().to_string()
@@ -84,7 +108,7 @@ def main(fps, timeout, addresses):
             if last_frame + fps < now:
                 sys.stdout.write(OUTPUT_FORMAT % (
                                  now - start_time,
-                                 num_tries,
+                                 varz.num_tries,
                                  priv.to_string().hex(),
                                  current[0],
                                  current[1]))
@@ -92,32 +116,34 @@ def main(fps, timeout, addresses):
 
             # the current guess was as close or closer to a valid ETH address
             # show it and update our best guess counter
-            if current >= best_score:
+            if current >= varz.best_score:
                 sys.stdout.write((OUTPUT_FORMAT + '\n') % (
                                  now - start_time,
-                                 num_tries,
+                                 varz.num_tries,
                                  priv.to_string().hex(),
                                  current[0],
                                  current[1]))
-                best_score = current
-                best_guess = (priv, pub, address)
+                varz.best_score = current
+                varz.best_guess = (priv.to_string().hex(), pub.hex(), address)
     except KeyboardInterrupt:
         pass
 
-    elapsed_time = time.clock() - start_time
-    priv, pub, address = best_guess
+    monitoring.Stop(httpd)
+
+    varz.elapsed_time = time.clock() - start_time
+    private_key, public_key, eth_address = varz.best_guess
     print('\n')
-    print('Total guesses:', num_tries)
-    print('Seconds      :', elapsed_time)
-    print('Guess / sec  :', float(num_tries) / elapsed_time)
+    print('Total guesses:', varz.num_tries)
+    print('Seconds      :', varz.elapsed_time)
+    print('Guess / sec  :', float(varz.num_tries) / varz.elapsed_time)
     print('Num targets  :', target_addresses.length())
     print('')
     print('Best Guess')
-    print('Private key  :', priv.to_string().hex() if priv else priv)
-    print('Public key   :', pub.hex() if pub else pub)
-    print('Address      : 0x' + address if address else '???')
+    print('Private key  :', private_key)
+    print('Public key   :', public_key)
+    print('Address      :', eth_address)
     print('Strength     : %d of 40 digits (%3.2f%%)' %
-        (best_score[0], 100.0 * best_score[0] / 40.0))
+        (varz.best_score[0], 100.0 * varz.best_score[0] / 40.0))
 
 
 if '__main__' == __name__:

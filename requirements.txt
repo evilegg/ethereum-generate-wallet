@@ -1,3 +1,4 @@
+attrdict
 click
 ecdsa
 pysha3>=1.0.2

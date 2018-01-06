@@ -13,6 +13,7 @@ While guessing, the script shows its guesses WarGames-style.
 Usage: brute_force_app.py [OPTIONS]
 
 Options:
+  --port INTEGER        Monitoring port
   --addresses FILENAME  Filename for yaml file containing target addresses.
   --timeout INTEGER     If set to a positive integer, stop trying after this
                         many seconds.
@@ -85,3 +86,8 @@ $ pip install -r requirements.txt
 $ python3 ./brute_force_app.py
 ...
 ```
+
+## Monitoring
+
+If you specify a `--port` command line argument, the app listens on that port
+for HTTP GETs and will return some basic run-time statistics.
