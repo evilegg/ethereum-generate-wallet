@@ -26,13 +26,29 @@ try:
     DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 except:
     DATA_DIR = os.path.join(os.getcwd(), 'data')
+
+
 ETH_ADDRESS_LENGTH = 40
-OUTPUT_FORMAT = '\r%012.6f %08x %s % 3d %-40s'
-HEADER_STR = '%-12s %-8s %-64s %-3s %-3s' % ('duration',
-                                             'attempts',
-                                             'private-key',
-                                             'str',
-                                             'address')
+
+
+def EchoLine(duration, attempts, private_key, strength, address, newline=False):
+    """Write a guess to the console."""
+    click.secho('\r%012.6f %08x %s % 3d ' % (duration,
+                                             attempts,
+                                             private_key,
+                                             strength),
+                nl=False)
+    click.secho(address[:strength], nl=False, bold=True)
+    click.secho(address[strength:], nl=newline)
+
+
+def EchoHeader():
+    """Write the names of the columns in our output to the console."""
+    click.secho('%-12s %-8s %-64s %-3s %-3s' % ('duration',
+                                                'attempts',
+                                                'private-key',
+                                                'str',
+                                                'address'))
 
 
 @click.option('--fps',
@@ -53,7 +69,7 @@ HEADER_STR = '%-12s %-8s %-64s %-3s %-3s' % ('duration',
 @click.command()
 def main(fps, timeout, addresses, port):
     target_addresses = trie.EthereumAddressTrie(targets.targets(addresses))
-    print('Loaded %d addresses\n' % (target_addresses.length()))
+    click.echo('Loaded %d addresses\n' % (target_addresses.length()))
 
     httpd = monitoring.Start('', port)
     varz = monitoring.Stats()
@@ -74,6 +90,8 @@ def main(fps, timeout, addresses, port):
     varz.guess_rate = monitoring.ComputedStat(
         lambda m: float(m.num_tries) / m.elapsed_time, units='guesses/sec')
 
+    # keep a histogram of guess strengths
+    varz.strength_histogram = {}
 
     # tuple of private key, public key, address
     varz.best_guess = ('', '', '?' * 40)
@@ -87,7 +105,7 @@ def main(fps, timeout, addresses, port):
     start_time = time.clock()
     varz.start_time = time.asctime(time.localtime(start_time))
 
-    print(HEADER_STR)
+    EchoHeader()
     try:
         while varz.best_score[0] < ETH_ADDRESS_LENGTH:
             now = time.clock()
@@ -104,25 +122,26 @@ def main(fps, timeout, addresses, port):
             address = keccak.hexdigest()[24:]
 
             current = target_addresses.Find(address)
+            strength, _ = current
+            varz.strength_histogram[strength] = varz.strength_histogram.get(strength, 0) + 1
 
             if last_frame + fps < now:
-                sys.stdout.write(OUTPUT_FORMAT % (
-                                 now - start_time,
-                                 varz.num_tries,
-                                 priv.to_string().hex(),
-                                 current[0],
-                                 current[1]))
+                EchoLine(now - start_time,
+                         varz.num_tries,
+                         priv.to_string().hex(),
+                         current[0],
+                         current[1])
                 last_frame = now
 
             # the current guess was as close or closer to a valid ETH address
             # show it and update our best guess counter
             if current >= varz.best_score:
-                sys.stdout.write((OUTPUT_FORMAT + '\n') % (
-                                 now - start_time,
-                                 varz.num_tries,
-                                 priv.to_string().hex(),
-                                 current[0],
-                                 current[1]))
+                EchoLine(now - start_time,
+                         varz.num_tries,
+                         priv.to_string().hex(),
+                         current[0],
+                         current[1],
+                         newline=True)
                 varz.best_score = current
                 varz.best_guess = (priv.to_string().hex(), pub.hex(), address)
     except KeyboardInterrupt:
