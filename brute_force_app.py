@@ -90,9 +90,6 @@ def main(fps, timeout, addresses, port):
     varz.guess_rate = monitoring.ComputedStat(
         lambda m: float(m.num_tries) / m.elapsed_time, units='guesses/sec')
 
-    # keep a histogram of guess strengths
-    varz.strength_histogram = {}
-
     # tuple of private key, public key, address
     varz.best_guess = ('', '', '?' * 40)
     varz.best_guess_human = monitoring.ComputedStat(
@@ -123,7 +120,6 @@ def main(fps, timeout, addresses, port):
 
             current = target_addresses.Find(address)
             strength, _ = current
-            varz.strength_histogram[strength] = varz.strength_histogram.get(strength, 0) + 1
 
             if last_frame + fps < now:
                 EchoLine(now - start_time,

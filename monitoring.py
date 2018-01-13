@@ -8,6 +8,7 @@ import threading
 import attrdict
 
 
+# FIXME: dicts added to our stats are not mutable
 _GLOBAL_STATS = attrdict.AttrDict()
 
 
