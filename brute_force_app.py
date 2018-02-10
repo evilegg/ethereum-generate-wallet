@@ -76,8 +76,8 @@ def main(fps, timeout, addresses, port):
     target_addresses = trie.EthereumAddressTrie(targets.targets(addresses))
     click.echo('Loaded %d addresses\n' % (target_addresses.length()))
 
-    httpd = monitoring.Start('', port)
-    varz = monitoring.Stats()
+    httpd = monitoring.Server()
+    varz = httpd.Start('', port)
 
     varz.fps = fps
     varz.timeout = timeout if timeout > 0 else 'forever'
@@ -149,8 +149,6 @@ def main(fps, timeout, addresses, port):
     except KeyboardInterrupt:
         pass
 
-    monitoring.Stop(httpd)
-
     varz.elapsed_time = time.clock() - start_time
     private_key, public_key, eth_address = varz.best_guess
     print('\n')
@@ -165,6 +163,8 @@ def main(fps, timeout, addresses, port):
     print('Address      :', eth_address)
     print('Strength     : %d of 40 digits (%3.2f%%)' %
         (varz.best_score[0], 100.0 * varz.best_score[0] / 40.0))
+
+    httpd.Stop()
 
 
 if '__main__' == __name__:
