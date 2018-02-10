@@ -85,9 +85,10 @@ def main(fps, timeout, addresses, port):
     # score is tuple of number of matching leading hex digits and that
     # portion of the resulting public key: (count, address[:count])
     varz.best_score = (0, '')
-    varz.difficulty = monitoring.ComputedStat(
-        lambda m: '%d of 40 digits (%3.2f%%)' % (m.best_score[0],
-                                                 100.0 * m.best_score[0] / 40.0)
+    varz.difficulty = httpd.DefineComputedStat(
+        lambda m:
+            '%d of 40 digits (%3.2f%%)' % 
+                (m.best_score[0], 100.0 * m.best_score[0] / ETH_ADDRESS_LENGTH)
     )
 
     # count the number of private keys generated
