@@ -22,13 +22,18 @@ import trie
 keccak = sha3.keccak_256()
 
 
-try:
-    DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
-except:
-    DATA_DIR = os.path.join(os.getcwd(), 'data')
-
-
 ETH_ADDRESS_LENGTH = 40
+
+
+def GetResourcePath(*path_fragments):
+    """Return a path to a local resource (relative to this script)"""
+    try:
+        base_dir = os.path.dirname(__file__)
+    except NameError:
+        # __file__ is not defined in some case, use the current path
+        base_dir = os.getcwd()
+
+    return os.path.join(base_dir, 'data', *path_fragments)
 
 
 def EchoLine(duration, attempts, private_key, strength, address, newline=False):
@@ -61,7 +66,7 @@ def EchoHeader():
                    'seconds.')
 @click.option('--addresses',
               type=click.File('r'),
-              default=os.path.join(DATA_DIR, 'addresses.yaml'),
+              default=GetResourcePath('addresses.yaml'),
               help='Filename for yaml file containing target addresses.')
 @click.option('--port',
               default=8120,
