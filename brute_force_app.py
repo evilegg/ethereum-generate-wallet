@@ -98,10 +98,6 @@ def main(fps, timeout, addresses, port):
     varz.guess_rate = monitoring.ComputedStat(
         lambda m: float(m.num_tries) / m.elapsed_time, units='guesses/sec')
 
-    # tuple of private key, public key, address
-    varz.best_guess = ('', '', '?' * 40)
-    varz.best_guess_human = monitoring.ComputedStat(
-        lambda m: dict(zip(('private-key', 'public-key', 'address'), m.best_guess)))
 
     # calculate the fps
     fps = 1.0 / float(fps) if fps > 0 else fps
@@ -147,12 +143,17 @@ def main(fps, timeout, addresses, port):
                          current[1],
                          newline=True)
                 varz.best_score = current
-                varz.best_guess = (priv.to_string().hex(), pub.hex(), address)
+                varz.best_guess = {
+                        'private-key': priv.to_string().hex(),
+                        'public-key': pub.hex(),
+                        'address': address,
+                        'url': 'https://etherscan.io/address/0x%s' % (address,),
+                    }
+
     except KeyboardInterrupt:
         pass
 
     varz.elapsed_time = time.clock() - start_time
-    private_key, public_key, eth_address = varz.best_guess
     print('\n')
     print('Total guesses:', varz.num_tries)
     print('Seconds      :', varz.elapsed_time)
@@ -160,11 +161,9 @@ def main(fps, timeout, addresses, port):
     print('Num targets  :', target_addresses.length())
     print('')
     print('Best Guess')
-    print('Private key  :', private_key)
-    print('Public key   :', public_key)
-    print('Address      :', eth_address)
-    print('Strength     : %d of 40 digits (%3.2f%%)' %
-        (varz.best_score[0], 100.0 * varz.best_score[0] / 40.0))
+    for key, val in sorted(varz.best_guess.items()):
+        print('%-14s: %s' % (key, val))
+    print('%-14s: %s' % ('Strength', varz.difficulty))
 
     httpd.Stop()
 
