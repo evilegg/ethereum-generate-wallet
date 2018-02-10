@@ -87,8 +87,10 @@ def main(fps, timeout, addresses, port):
     varz.best_score = (0, '')
     varz.difficulty = httpd.DefineComputedStat(
         lambda m:
-            '%d of 40 digits (%3.2f%%)' % 
-                (m.best_score[0], 100.0 * m.best_score[0] / ETH_ADDRESS_LENGTH)
+            '%d of %d digits (%3.2f%%)' % (
+                 m.best_score[0],
+                 ETH_ADDRESS_LENGTH,
+                 100.0 * m.best_score[0] / ETH_ADDRESS_LENGTH)
     )
 
     # count the number of private keys generated
