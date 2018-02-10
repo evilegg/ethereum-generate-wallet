@@ -107,8 +107,8 @@ def main(fps, timeout, addresses, port):
     fps = 1.0 / float(fps) if fps > 0 else fps
     last_frame = 0
 
+    varz.start_time = time.asctime(time.localtime())
     start_time = time.clock()
-    varz.start_time = time.asctime(time.localtime(start_time))
 
     EchoHeader()
     try:
