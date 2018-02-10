@@ -156,12 +156,15 @@ def main(fps, timeout, addresses, port):
 
     varz.elapsed_time = time.clock() - start_time
     print('\n')
-    print('Total guesses:', varz.num_tries)
-    print('Seconds      :', varz.elapsed_time)
-    print('Guess / sec  :', float(varz.num_tries) / varz.elapsed_time)
-    print('Num targets  :', target_addresses.length())
+    print('Summary')
+    print('-------')
+    print('%-14s: %s' % ('Total guesses', varz.num_tries))
+    print('%-14s: %s' % ('Seconds', varz.elapsed_time))
+    print('%-14s: %s' % ('Guess / sec', float(varz.num_tries) / varz.elapsed_time))
+    print('%-14s: %s' % ('Num targets', target_addresses.length()))
     print('')
     print('Best Guess')
+    print('----------')
     for key, val in sorted(varz.best_guess.items()):
         print('%-14s: %s' % (key, val))
     print('%-14s: %s' % ('Strength', varz.difficulty))
