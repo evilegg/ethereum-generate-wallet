@@ -95,9 +95,10 @@ def main(fps, timeout, addresses, port):
 
     # count the number of private keys generated
     varz.num_tries = 0
-    varz.guess_rate = monitoring.ComputedStat(
-        lambda m: float(m.num_tries) / m.elapsed_time, units='guesses/sec')
-
+    varz.guess_rate = httpd.DefineComputedStat(
+        lambda m:
+             float(m.num_tries) / m.elapsed_time, units='guesses/sec'
+    )
 
     # calculate the fps
     fps = 1.0 / float(fps) if fps > 0 else fps
