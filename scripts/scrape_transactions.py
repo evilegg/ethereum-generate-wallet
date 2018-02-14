@@ -5,12 +5,26 @@ Given a block-id on the command line, go through every transaction collecting
 the public addresses.  Recursively.
 """
 
+import urllib.parse
+
+from bs4 import BeautifulSoup
 import click
 import yaml
 
 
 def _find_last_page(html_text):
     """Scan the HTML for the Last page, and return a list of relative URLs."""
+    soup = BeautifulSoup(html_text, 'html.parser')
+
+    # Searching for 'https://etherscan.io/txs?block=5066192&p=2'
+    last_page = soup.find('a',
+                          attrs={'class': 'btn btn-default btn-xs logout'},
+                          string='Last')
+    if not last_page:
+        return 1
+    url = last_page.get('href')
+    last_page = urllib.parse.parse_qs(url).get('p', ['0'])
+    return int(last_page[0])
 
 
 def _find_addresses_in_page(html_text):
