@@ -6,12 +6,15 @@ the public addresses.  Recursively.
 """
 
 import os
+import random
 import re
 import sys
+import time
 import urllib.parse
 
 from bs4 import BeautifulSoup
 import click
+import requests
 import yaml
 
 
@@ -47,6 +50,21 @@ def get_block(block_id, page_number):
     if os.path.exists(pth):
         with open(pth) as fin:
             return fin.read()
+    else:
+        url = 'https://etherscan.io/txs?block=%d&p=%d' % (block_id,
+                                                          page_number)
+        done = False
+        while not done:
+            try:
+                reply = requests.get(url)
+                done = True
+            except:
+                # sleep 3 - 10 seconds when rate-limited
+                time.sleep(3.0 + 7.0 * random.random())
+
+        with open(pth, 'w') as fout:
+            fout.write(reply.text)
+            return reply.text
 
 
 def echo_new_addresses_found(block, page, existing_addresses, new_addresses):
