@@ -6,6 +6,7 @@ the public addresses.  Recursively.
 """
 
 import re
+import sys
 import urllib.parse
 
 from bs4 import BeautifulSoup
