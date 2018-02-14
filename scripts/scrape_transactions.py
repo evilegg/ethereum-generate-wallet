@@ -7,9 +7,43 @@ the public addresses.  Recursively.
 
 import click
 import yaml
+
+
+def _find_last_page(html_text):
+    """Scan the HTML for the Last page, and return a list of relative URLs."""
+
+
+def _find_addresses_in_page(html_text):
+    """Scrape addresses from block-id page."""
+
+
+def get_block(block_id, page_number):
+    """Get the HTML for a particular block."""
+
+
+def echo_new_addresses_found(block, page, existing_addresses, new_addresses):
+    click.echo('# block=%d, page=%d, %d new addresses found' % (
+        block, page, len(new_addresses.difference(existing_addresses))))
+
+
 def scrape_block(block, page):
     """Scrape a full block and return all addresses"""
     eth_addrs = set()
+
+    reply = get_block(block, page)
+    last_page = _find_last_page(reply)
+
+    new_addrs = _find_addresses_in_page(reply)
+    echo_new_addresses_found(block, page, eth_addrs, new_addrs)
+    eth_addrs.update(new_addrs)
+
+    page_num = 2
+    while page_num < last_page:
+        reply = get_block(block, page_num)
+        new_addrs = _find_addresses_in_page(reply)
+        echo_new_addresses_found(block, page, eth_addrs, new_addrs)
+        eth_addrs.update(new_addrs)
+        page_num += 1
     return eth_addrs
 
 
