@@ -5,6 +5,7 @@ Given a block-id on the command line, go through every transaction collecting
 the public addresses.  Recursively.
 """
 
+import re
 import urllib.parse
 
 from bs4 import BeautifulSoup
@@ -29,6 +30,10 @@ def _find_last_page(html_text):
 
 def _find_addresses_in_page(html_text):
     """Scrape addresses from block-id page."""
+    soup = BeautifulSoup(html_text, 'html.parser')
+    addresses = soup.find_all('a', href=re.compile('^/address/0x([a-z0-9]+)'))
+    addr_urls = [a.get('href') for a in addresses]
+    return set([url.split('/', 2)[-1] for url in addr_urls])
 
 
 def get_block(block_id, page_number):
