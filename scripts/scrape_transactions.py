@@ -5,6 +5,7 @@ Given a block-id on the command line, go through every transaction collecting
 the public addresses.  Recursively.
 """
 
+import os
 import re
 import sys
 import urllib.parse
@@ -39,6 +40,13 @@ def _find_addresses_in_page(html_text):
 
 def get_block(block_id, page_number):
     """Get the HTML for a particular block."""
+    pth = 'data/block-%d.html' % (block_id,)
+    if page_number != 1:
+        pth = 'data/block-%d-%d.html' % (block_id, page_number)
+
+    if os.path.exists(pth):
+        with open(pth) as fin:
+            return fin.read()
 
 
 def echo_new_addresses_found(block, page, existing_addresses, new_addresses):
