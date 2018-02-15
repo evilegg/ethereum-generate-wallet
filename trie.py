@@ -45,14 +45,13 @@ class EthereumAddressTrie(object):
 
         Args: a potential ETH address
 
-        Returns: a tuple of (count, sub_address), where `count` is the
+        Returns: a tuple of (count, address), where `count` is the
             number of of leading hex digits that match a target address
-            and `sub_address` is the first `count` hex digits in the
-            address in question.
+            and `address` is the corresponding best match.
         """
         trie = self._value
         for count, char in enumerate(address):
             if char not in trie:
                 break
             trie = trie[char]
-        return count, address[:count]
+        return count, address

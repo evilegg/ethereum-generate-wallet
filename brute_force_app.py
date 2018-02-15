@@ -22,17 +22,38 @@ import trie
 keccak = sha3.keccak_256()
 
 
-try:
-    DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
-except:
-    DATA_DIR = os.path.join(os.getcwd(), 'data')
 ETH_ADDRESS_LENGTH = 40
-OUTPUT_FORMAT = '\r%012.6f %08x %s % 3d %-40s'
-HEADER_STR = '%-12s %-8s %-64s %-3s %-3s' % ('duration',
-                                             'attempts',
-                                             'private-key',
-                                             'str',
-                                             'address')
+
+
+def GetResourcePath(*path_fragments):
+    """Return a path to a local resource (relative to this script)"""
+    try:
+        base_dir = os.path.dirname(__file__)
+    except NameError:
+        # __file__ is not defined in some case, use the current path
+        base_dir = os.getcwd()
+
+    return os.path.join(base_dir, 'data', *path_fragments)
+
+
+def EchoLine(duration, attempts, private_key, strength, address, newline=False):
+    """Write a guess to the console."""
+    click.secho('\r%012.6f %08x %s % 3d ' % (duration,
+                                             attempts,
+                                             private_key,
+                                             strength),
+                nl=False)
+    click.secho(address[:strength], nl=False, bold=True)
+    click.secho(address[strength:], nl=newline)
+
+
+def EchoHeader():
+    """Write the names of the columns in our output to the console."""
+    click.secho('%-12s %-8s %-64s %-3s %-3s' % ('duration',
+                                                'attempts',
+                                                'private-key',
+                                                'str',
+                                                'address'))
 
 
 @click.option('--fps',
@@ -45,7 +66,7 @@ HEADER_STR = '%-12s %-8s %-64s %-3s %-3s' % ('duration',
                    'seconds.')
 @click.option('--addresses',
               type=click.File('r'),
-              default=os.path.join(DATA_DIR, 'addresses.yaml'),
+              default=GetResourcePath('addresses.yaml'),
               help='Filename for yaml file containing target addresses.')
 @click.option('--port',
               default=8120,
@@ -53,10 +74,10 @@ HEADER_STR = '%-12s %-8s %-64s %-3s %-3s' % ('duration',
 @click.command()
 def main(fps, timeout, addresses, port):
     target_addresses = trie.EthereumAddressTrie(targets.targets(addresses))
-    print('Loaded %d addresses\n' % (target_addresses.length()))
+    click.echo('Loaded %d addresses\n' % (target_addresses.length()))
 
-    httpd = monitoring.Start('', port)
-    varz = monitoring.Stats()
+    httpd = monitoring.Server()
+    varz = httpd.Start('', port)
 
     varz.fps = fps
     varz.timeout = timeout if timeout > 0 else 'forever'
@@ -64,30 +85,29 @@ def main(fps, timeout, addresses, port):
     # score is tuple of number of matching leading hex digits and that
     # portion of the resulting public key: (count, address[:count])
     varz.best_score = (0, '')
-    varz.difficulty = monitoring.ComputedStat(
-        lambda m: '%d of 40 digits (%3.2f%%)' % (m.best_score[0],
-                                                 100.0 * m.best_score[0] / 40.0)
+    varz.difficulty = httpd.DefineComputedStat(
+        lambda m:
+            '%d of %d digits (%3.2f%%)' % (
+                 m.best_score[0],
+                 ETH_ADDRESS_LENGTH,
+                 100.0 * m.best_score[0] / ETH_ADDRESS_LENGTH)
     )
 
     # count the number of private keys generated
     varz.num_tries = 0
-    varz.guess_rate = monitoring.ComputedStat(
-        lambda m: float(m.num_tries) / m.elapsed_time, units='guesses/sec')
-
-
-    # tuple of private key, public key, address
-    varz.best_guess = ('', '', '?' * 40)
-    varz.best_guess_human = monitoring.ComputedStat(
-        lambda m: dict(zip(('private-key', 'public-key', 'address'), m.best_guess)))
+    varz.guess_rate = httpd.DefineComputedStat(
+        lambda m:
+             float(m.num_tries) / m.elapsed_time, units='guesses/sec'
+    )
 
     # calculate the fps
     fps = 1.0 / float(fps) if fps > 0 else fps
     last_frame = 0
 
+    varz.start_time = time.asctime(time.localtime())
     start_time = time.clock()
-    varz.start_time = time.asctime(time.localtime(start_time))
 
-    print(HEADER_STR)
+    EchoHeader()
     try:
         while varz.best_score[0] < ETH_ADDRESS_LENGTH:
             now = time.clock()
@@ -104,46 +124,52 @@ def main(fps, timeout, addresses, port):
             address = keccak.hexdigest()[24:]
 
             current = target_addresses.Find(address)
+            strength, _ = current
 
             if last_frame + fps < now:
-                sys.stdout.write(OUTPUT_FORMAT % (
-                                 now - start_time,
-                                 varz.num_tries,
-                                 priv.to_string().hex(),
-                                 current[0],
-                                 current[1]))
+                EchoLine(now - start_time,
+                         varz.num_tries,
+                         priv.to_string().hex(),
+                         current[0],
+                         current[1])
                 last_frame = now
 
             # the current guess was as close or closer to a valid ETH address
             # show it and update our best guess counter
             if current >= varz.best_score:
-                sys.stdout.write((OUTPUT_FORMAT + '\n') % (
-                                 now - start_time,
-                                 varz.num_tries,
-                                 priv.to_string().hex(),
-                                 current[0],
-                                 current[1]))
+                EchoLine(now - start_time,
+                         varz.num_tries,
+                         priv.to_string().hex(),
+                         current[0],
+                         current[1],
+                         newline=True)
                 varz.best_score = current
-                varz.best_guess = (priv.to_string().hex(), pub.hex(), address)
+                varz.best_guess = {
+                        'private-key': priv.to_string().hex(),
+                        'public-key': pub.hex(),
+                        'address': address,
+                        'url': 'https://etherscan.io/address/0x%s' % (address,),
+                    }
+
     except KeyboardInterrupt:
         pass
 
-    monitoring.Stop(httpd)
-
     varz.elapsed_time = time.clock() - start_time
-    private_key, public_key, eth_address = varz.best_guess
     print('\n')
-    print('Total guesses:', varz.num_tries)
-    print('Seconds      :', varz.elapsed_time)
-    print('Guess / sec  :', float(varz.num_tries) / varz.elapsed_time)
-    print('Num targets  :', target_addresses.length())
+    print('Summary')
+    print('-------')
+    print('%-14s: %s' % ('Total guesses', varz.num_tries))
+    print('%-14s: %s' % ('Seconds', varz.elapsed_time))
+    print('%-14s: %s' % ('Guess / sec', float(varz.num_tries) / varz.elapsed_time))
+    print('%-14s: %s' % ('Num targets', target_addresses.length()))
     print('')
     print('Best Guess')
-    print('Private key  :', private_key)
-    print('Public key   :', public_key)
-    print('Address      :', eth_address)
-    print('Strength     : %d of 40 digits (%3.2f%%)' %
-        (varz.best_score[0], 100.0 * varz.best_score[0] / 40.0))
+    print('----------')
+    for key, val in sorted(varz.best_guess.items()):
+        print('%-14s: %s' % (key, val))
+    print('%-14s: %s' % ('Strength', varz.difficulty))
+
+    httpd.Stop()
 
 
 if '__main__' == __name__:
