@@ -67,9 +67,12 @@ def get_block(block_id, page_number, local_only):
             return reply.text
 
 
-def echo_new_addresses_found(block, page, existing_addresses, new_addresses):
+def echo_new_addresses_found(block, page, known_addresses, new_addresses):
+    """Echo a consistent message showing address scraping results."""
     click.echo('# block=%d, page=%d, %d new addresses found' % (
-        block, page, len(new_addresses.difference(existing_addresses))))
+        block,
+        page,
+        len(new_addresses.difference(known_addresses))))
 
 
 def scrape_block(block, page, local_only):
