@@ -38,7 +38,9 @@ def _find_addresses_in_page(html_text):
     soup = BeautifulSoup(html_text, 'html.parser')
     addresses = soup.find_all('a', href=re.compile('^/address/0x([a-z0-9]+)'))
     addr_urls = [a.get('href') for a in addresses]
-    return set([url.split('/', 2)[-1] for url in addr_urls])
+    addr_urls = [url.split('/', 2)[-1] for url in addr_urls]
+    addr_urls = [url[2:] for url in addr_urls]
+    return set(addr_urls)
 
 
 def get_block(block_id, page_number, local_only):
