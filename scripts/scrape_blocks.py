@@ -129,7 +129,7 @@ def main(first_block, last_block, local_only, outfile):
                        nl=False)
         eth_addrs.update(new_addrs)
 
-    yaml.safe_dump(list(eth_addrs),
+    yaml.safe_dump(sorted(eth_addrs),
                    outfile or sys.stdout,
                    default_flow_style=False)
     click.echo('# Total %d addresses found in %d blocks' % (
