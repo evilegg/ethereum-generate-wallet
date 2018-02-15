@@ -41,7 +41,7 @@ def _find_addresses_in_page(html_text):
     return set([url.split('/', 2)[-1] for url in addr_urls])
 
 
-def get_block(block_id, page_number):
+def get_block(block_id, page_number, local_only):
     """Get the HTML for a particular block."""
     pth = 'data/block-%d.html' % (block_id,)
     if page_number != 1:
@@ -50,7 +50,7 @@ def get_block(block_id, page_number):
     if os.path.exists(pth):
         with open(pth) as fin:
             return fin.read()
-    else:
+    elif not local_only:
         url = 'https://etherscan.io/txs?block=%d&p=%d' % (block_id,
                                                           page_number)
         done = False
@@ -72,24 +72,31 @@ def echo_new_addresses_found(block, page, existing_addresses, new_addresses):
         block, page, len(new_addresses.difference(existing_addresses))))
 
 
-def scrape_block(block, page):
+def scrape_block(block, page, local_only):
     """Scrape a full block and return all addresses"""
     eth_addrs = set()
 
-    reply = get_block(block, page)
-    last_page = _find_last_page(reply)
+    reply = get_block(block, page, local_only)
+    if reply is not None:
+        last_page = _find_last_page(reply)
 
-    new_addrs = _find_addresses_in_page(reply)
-    echo_new_addresses_found(block, page, eth_addrs, new_addrs)
-    eth_addrs.update(new_addrs)
-
-    page_num = 2
-    while page_num < last_page:
-        reply = get_block(block, page_num)
         new_addrs = _find_addresses_in_page(reply)
-        echo_new_addresses_found(block, page, eth_addrs, new_addrs)
+        if not local_only:
+            echo_new_addresses_found(block, page, eth_addrs, new_addrs)
         eth_addrs.update(new_addrs)
-        page_num += 1
+
+        page_num = 2
+        while page_num < last_page:
+            reply = get_block(block, page_num, local_only)
+            if reply is not None:
+                new_addrs = _find_addresses_in_page(reply)
+                if not local_only:
+                    echo_new_addresses_found(block,
+                                             page_num,
+                                             eth_addrs,
+                                             new_addrs)
+                eth_addrs.update(new_addrs)
+            page_num += 1
     return eth_addrs
 
 
@@ -97,15 +104,31 @@ def scrape_block(block, page):
 @click.option('--first-block', required=True, type=int)
 @click.option('--last-block', type=int)
 @click.option('--outfile', type=click.File('w'))
-def main(first_block, last_block, outfile):
+@click.option('--local-only',
+              default=False,
+              help='Do not fetch new pages, read from local page dumps only.')
+def main(first_block, last_block, local_only, outfile):
 
     last_block = last_block or last_block + 1
     eth_addrs = set()
     for block in range(first_block, last_block + 1):
-        eth_addrs.update(scrape_block(block, 1))
+        new_addrs = scrape_block(block, 1, local_only)
+        if not new_addrs:
+            continue
 
-    yaml.safe_dump(list(eth_addrs), outfile or sys.stdout, default_flow_style=False)
-    click.echo('# Total %d addresses found' % len(eth_addrs))
+        if local_only:
+            click.echo('\r# block=%d, %s new addresses found, %d total' % (
+                block,
+                '{:3d}'.format(len(new_addrs.difference(eth_addrs))),
+                len(new_addrs) + len(eth_addrs)),
+                       nl=False)
+        eth_addrs.update(new_addrs)
+
+    yaml.safe_dump(list(eth_addrs),
+                   outfile or sys.stdout,
+                   default_flow_style=False)
+    click.echo('# Total %d addresses found in %d blocks' % (
+        len(eth_addrs), last_block - first_block))
 
 
 if '__main__' == __name__:
