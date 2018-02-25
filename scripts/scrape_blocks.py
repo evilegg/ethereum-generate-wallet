@@ -113,7 +113,7 @@ def scrape_block(block, page, local_only):
               default=False,
               help='Do not fetch new pages, read from local page dumps only.')
 def main(first_block, last_block, local_only, outfile):
-
+    """Scrape etherscan.io block info pages for active ETH addresses."""
     last_block = last_block or first_block + 1
     eth_addrs = set()
     for block in range(first_block, last_block + 1):
