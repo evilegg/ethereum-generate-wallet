@@ -37,7 +37,7 @@ class EthereumAddressTrie(object):
                 ptr = ptr[digit]
         return self._value
 
-    def length(self):
+    def __len__(self):
         return self._size
 
     def Find(self, address):

@@ -73,8 +73,9 @@ def EchoHeader():
               help='Monitoring port')
 @click.command()
 def main(fps, timeout, addresses, port):
+    click.echo('Loading known public ETH addresses', nl=False)
     target_addresses = trie.EthereumAddressTrie(targets.targets(addresses))
-    click.echo('Loaded %d addresses\n' % (target_addresses.length()))
+    click.echo('%d found.\n' % (len(target_addresses)))
 
     httpd = monitoring.Server()
     varz = httpd.Start('', port)
@@ -161,10 +162,10 @@ def main(fps, timeout, addresses, port):
     print('%-14s: %s' % ('Total guesses', varz.num_tries))
     print('%-14s: %s' % ('Seconds', varz.elapsed_time))
     print('%-14s: %s' % ('Guess / sec', float(varz.num_tries) / varz.elapsed_time))
-    print('%-14s: %s' % ('Num targets', target_addresses.length()))
     print('')
     print('Best Guess')
     print('----------')
+    click.echo('%-14s: %s' % ('Num targets', len(target_addresses)))
     for key, val in sorted(varz.best_guess.items()):
         print('%-14s: %s' % (key, val))
     print('%-14s: %s' % ('Strength', varz.difficulty))
