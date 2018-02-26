@@ -156,19 +156,19 @@ def main(fps, timeout, addresses, port):
         pass
 
     varz.elapsed_time = time.clock() - start_time
-    print('\n')
-    print('Summary')
-    print('-------')
-    print('%-14s: %s' % ('Total guesses', varz.num_tries))
-    print('%-14s: %s' % ('Seconds', varz.elapsed_time))
-    print('%-14s: %s' % ('Guess / sec', float(varz.num_tries) / varz.elapsed_time))
-    print('')
-    print('Best Guess')
-    print('----------')
+    click.echo('')
+    click.echo('Summary')
+    click.echo('-------')
+    click.echo('%-14s: %s' % ('Total guesses', varz.num_tries))
+    click.echo('%-14s: %s' % ('Seconds', varz.elapsed_time))
+    click.echo('%-14s: %s' % ('Guess / sec', float(varz.num_tries) / varz.elapsed_time))
     click.echo('%-14s: %s' % ('Num targets', len(target_addresses)))
+    click.echo('')
+    click.echo('Best Guess')
+    click.echo('----------')
     for key, val in sorted(varz.best_guess.items()):
-        print('%-14s: %s' % (key, val))
-    print('%-14s: %s' % ('Strength', varz.difficulty))
+        click.echo('%-14s: %s' % (key, val))
+    click.echo('%-14s: %s' % ('Strength', varz.difficulty))
 
     httpd.Stop()
 
