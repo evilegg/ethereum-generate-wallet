@@ -38,7 +38,9 @@ def _find_addresses_in_page(html_text):
     soup = BeautifulSoup(html_text, 'html.parser')
     addresses = soup.find_all('a', href=re.compile('^/address/0x([a-z0-9]+)'))
     addr_urls = [a.get('href') for a in addresses]
-    return set([url.split('/', 2)[-1] for url in addr_urls])
+    addr_urls = [url.split('/', 2)[-1] for url in addr_urls]
+    addr_urls = [url[2:] for url in addr_urls]
+    return set(addr_urls)
 
 
 def get_block(block_id, page_number, local_only):
@@ -111,8 +113,8 @@ def scrape_block(block, page, local_only):
               default=False,
               help='Do not fetch new pages, read from local page dumps only.')
 def main(first_block, last_block, local_only, outfile):
-
-    last_block = last_block or last_block + 1
+    """Scrape etherscan.io block info pages for active ETH addresses."""
+    last_block = last_block or first_block + 1
     eth_addrs = set()
     for block in range(first_block, last_block + 1):
         new_addrs = scrape_block(block, 1, local_only)
@@ -127,7 +129,7 @@ def main(first_block, last_block, local_only, outfile):
                        nl=False)
         eth_addrs.update(new_addrs)
 
-    yaml.safe_dump(list(eth_addrs),
+    yaml.safe_dump(sorted(eth_addrs),
                    outfile or sys.stdout,
                    default_flow_style=False)
     click.echo('# Total %d addresses found in %d blocks' % (
