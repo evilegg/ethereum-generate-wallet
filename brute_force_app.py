@@ -5,6 +5,7 @@ Warning: this is utterly futile.  I've only done this to get a feel
 for how secure private keys are against brute-force attacks.
 """
 
+import codecs
 import os
 import sys
 import threading
@@ -130,7 +131,7 @@ def main(fps, timeout, addresses, port):
             if last_frame + fps < now:
                 EchoLine(now - start_time,
                          varz.num_tries,
-                         priv.to_string().hex(),
+                         codecs.encode(priv.to_string(), 'hex'),
                          current[0],
                          current[1])
                 last_frame = now
@@ -140,14 +141,14 @@ def main(fps, timeout, addresses, port):
             if current >= varz.best_score:
                 EchoLine(now - start_time,
                          varz.num_tries,
-                         priv.to_string().hex(),
+                         codecs.encode(priv.to_string(), 'hex'),
                          current[0],
                          current[1],
                          newline=True)
                 varz.best_score = current
                 varz.best_guess = {
-                        'private-key': priv.to_string().hex(),
-                        'public-key': pub.hex(),
+                        'private-key': codecs.encode(priv.to_string(), 'hex'),
+                        'public-key': codecs.encode(pub, 'hex'),
                         'address': address,
                         'url': 'https://etherscan.io/address/0x%s' % (address,),
                     }
