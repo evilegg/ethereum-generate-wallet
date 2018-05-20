@@ -87,6 +87,57 @@ $ python3 ./brute_force_app.py
 ...
 ```
 
+## Troubleshooting
+
+1. libyaml is not found
+
+   ```
+   #include <yaml.h>
+                    ^
+   compilation terminated.
+
+   libyaml is not found or a compiler error: forcing --without-libyaml
+   (if libyaml is installed correctly, you may need to
+   specify the option --include-dirs or uncomment and
+   modify the parameter include_dirs in setup.cfg)
+	 ```
+
+   Your python development environment is missing a few components.  Ensure you have `libyaml-dev`, `libpython3-dev`, and `python3-dev` installed.
+
+   ```bash
+   sudo apt-get install libyaml-dev libpython3-dev python3-dev
+   ```
+
+2. Click wants UTF-8 but your python install was configured for ASCII
+
+    ```bash
+    $ python ./brute_force_app.py
+    Traceback (most recent call last):
+      File "./brute_force_app.py", line 177, in <module>
+        main()
+      File "/home/cabox/workspace/venv/lib/python3.4/site-packages/click/core.py", line 722, in __call__
+        return self.main(*args, **kwargs)
+      File "/home/cabox/workspace/venv/lib/python3.4/site-packages/click/core.py", line 676, in main
+        _verify_python3_env()
+      File "/home/cabox/workspace/venv/lib/python3.4/site-packages/click/_unicodefun.py", line 118, in _verify_python3_env
+        'for mitigation steps.' + extra)
+    RuntimeError: Click will abort further execution because Python 3 was configured to use ASCII as encoding for the environment.  Consult http://click.pocoo.org/python3/for mitigation steps.
+
+    This system supports the C.UTF-8 locale which is recommended.
+    You might be able to resolve your issue by exporting the
+    following environment variables:
+
+        export LC_ALL=C.UTF-8
+        export LANG=C.UTF-8
+    ```
+
+    Export the recommended locale information to make click happy.
+
+    ```bash
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+    ```
+
 ## Monitoring
 
 If you specify a `--port` command line argument, the app listens on that port
