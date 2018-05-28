@@ -1,0 +1,4 @@
+#!/bin/bash
+# Execute the application with defaults
+
+LC_ALL=C.UTF-8 LANG=C.UTF-8 ./venv/bin/python3 brute_force_app.py $*
