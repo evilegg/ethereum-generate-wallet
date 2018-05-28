@@ -12,7 +12,7 @@ import threading
 import time
 
 import click
-from ecdsa import SigningKey, SECP256k1
+import ecdsa
 import sha3
 import yaml
 
@@ -24,6 +24,19 @@ keccak = sha3.keccak_256()
 
 
 ETH_ADDRESS_LENGTH = 40
+
+
+class SigningKey(ecdsa.SigningKey):
+
+    @staticmethod
+    def _hexlify(val):
+        return codecs.encode(val, 'hex').decode('utf-8')
+
+    def hexlify_private(self):
+        return self._hexlify(self.to_string())
+
+    def hexlify_public(self):
+        return self._hexlify(self.get_verifying_key().to_string())
 
 
 def GetResourcePath(*path_fragments):
@@ -119,7 +132,7 @@ def main(fps, timeout, addresses, port):
 
             varz.num_tries += 1
 
-            priv = SigningKey.generate(curve=SECP256k1)
+            priv = SigningKey.generate(curve=ecdsa.SECP256k1)
             pub = priv.get_verifying_key().to_string()
 
             keccak.update(pub)
@@ -131,7 +144,7 @@ def main(fps, timeout, addresses, port):
             if last_frame + fps < now:
                 EchoLine(now - start_time,
                          varz.num_tries,
-                         codecs.encode(priv.to_string(), 'hex'),
+                         priv.hexlify_private(),
                          current[0],
                          current[1])
                 last_frame = now
@@ -141,14 +154,14 @@ def main(fps, timeout, addresses, port):
             if current >= varz.best_score:
                 EchoLine(now - start_time,
                          varz.num_tries,
-                         codecs.encode(priv.to_string(), 'hex'),
+                         priv.hexlify_private(),
                          current[0],
                          current[1],
                          newline=True)
                 varz.best_score = current
                 varz.best_guess = {
-                        'private-key': codecs.encode(priv.to_string(), 'hex'),
-                        'public-key': codecs.encode(pub, 'hex'),
+                        'private-key': priv.hexlify_private(),
+                        'public-key': priv.hexlify_public(),
                         'address': address,
                         'url': 'https://etherscan.io/address/0x%s' % (address,),
                     }
