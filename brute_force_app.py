@@ -120,12 +120,12 @@ def main(fps, timeout, addresses, port):
     last_frame = 0
 
     varz.start_time = time.asctime(time.localtime())
-    start_time = time.clock()
+    start_time = time.perf_counter()
 
     EchoHeader()
     try:
         while varz.best_score[0] < ETH_ADDRESS_LENGTH:
-            now = time.clock()
+            now = time.perf_counter()
             varz.elapsed_time = now - start_time
             if (timeout > 0) and (start_time + timeout < now):
                 break
@@ -169,7 +169,7 @@ def main(fps, timeout, addresses, port):
     except KeyboardInterrupt:
         pass
 
-    varz.elapsed_time = time.clock() - start_time
+    varz.elapsed_time = time.perf_counter() - start_time
     click.echo('')
     click.echo('Summary')
     click.echo('-------')
