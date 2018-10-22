@@ -39,6 +39,17 @@ How many leading digits can you match?  ;)
 Note: having a 39 digit match of the address means you're no closer to
 unlocking anything.
 
+### Seriously, no chance
+
+How impossible is this?  Assuming [45,000,000 addresses](https://etherscan.io/chart/address),
+you have a 45000000 / 115792089237316195423570985008687907853269984665640564039457584007913129639936
+or 3.8862758497925e-70 chance of randomly guessing a private key associated with a public
+address.
+
+If you made O(100) random guesses per second, it would take you on roughly 1 trillion
+trillion trillion trillion years to guess one address (on average).  Clearly a short-cut
+is needed, but that's for another project.
+
 ## Python dependencies
 
 - click
